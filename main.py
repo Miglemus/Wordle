@@ -25,8 +25,9 @@ if __name__ == "__main__":
         game = Game()
         interface = InterfaceGameSolver(game=game, solver=solver)
     elif args.game_mode == "game":
+        solver = FastSolver() if args.solver == "fast" else Solver()
         game = Game()
-        interface = InterfaceGame(game=game)
+        interface = InterfaceGame(game=game, solver=solver)
 
     if hasattr(interface, "_game"):
         print(f"Solution: {interface._game._solution}")
