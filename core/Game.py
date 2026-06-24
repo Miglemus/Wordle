@@ -1,6 +1,6 @@
 import random
-from core.Answer import Answer, Result
-from core.utils import get_all_solutions, get_all_guesses, get_all_words
+from core.Answer import Answer
+from core.utils import get_all_solutions
 
 
 class Game:

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from core.Game import Game
 
 
 class Interface:
