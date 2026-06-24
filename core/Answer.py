@@ -43,6 +43,20 @@ class Answer:
 
         return cls(result, guess)
 
+    @staticmethod
+    def from_string(result_str: str, guess: str) -> "Answer":
+        result: list[Result] = []
+        for char in result_str:
+            if char.upper() == "C":
+                result.append(Result.CORRECT)
+            elif char.upper() == "P":
+                result.append(Result.PRESENT)
+            elif char.upper() == "A":
+                result.append(Result.ABSENT)
+            else:
+                raise ValueError(f"Invalid character in result string: {char}")
+        return Answer(result, guess)
+
     def is_correct(self) -> bool:
         return all(r == Result.CORRECT for r in self._result)
 
