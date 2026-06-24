@@ -46,6 +46,9 @@ class Answer:
     def is_correct(self) -> bool:
         return all(r == Result.CORRECT for r in self._result)
 
+    def __hash__(self):
+        return hash("".join(res.value for res in self.result))
+
     def __eq__(self, other: "Answer"):
         return self._result == other.result
 
