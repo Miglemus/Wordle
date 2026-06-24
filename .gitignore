@@ -1,3 +1,6 @@
 .vscode
 *__pycache__*
 .venv
+*.egg-info/
+core/solver_accel.c
+core/solver_accel*.so
