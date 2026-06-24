@@ -1,17 +1,17 @@
 # Wordle
 
-Un Wordle en terminal, construit avec Python et Rich, avec un solveur capable de
-proposer les meilleurs mots a jouer. Le projet propose trois experiences :
-jouer soi-meme, demander de l'aide pendant une partie, ou regarder l'IA resoudre
-une grille automatiquement.
+A terminal-based Wordle game built with Python and Rich, with a solver that can
+suggest strong guesses. The project includes three experiences: play the game
+yourself, ask for help during a game, or watch the AI solve a board
+automatically.
 
 <p align="center">
-  <img src="docs/images/final-product-placeholder.png" alt="Aperçu du produit final">
+  <img src="docs/images/final-product-placeholder.png" alt="Final product preview">
 </p>
 
 ## Installation
 
-Le projet utilise Python 3.12+ et `uv` pour gerer l'environnement.
+This project uses Python 3.12+ and `uv` to manage the environment.
 
 ```bash
 git clone git@github.com:Miglemus/Wordle.git
@@ -19,7 +19,7 @@ cd Wordle
 uv sync
 ```
 
-Si vous preferez cloner en HTTPS :
+If you prefer cloning with HTTPS:
 
 ```bash
 git clone https://github.com/Miglemus/Wordle.git
@@ -27,179 +27,178 @@ cd Wordle
 uv sync
 ```
 
-Lancer le mode par defaut :
+Run the default mode:
 
 ```bash
 uv run python main.py
 ```
 
-Afficher l'aide du CLI :
+Show the CLI help:
 
 ```bash
 uv run python main.py --help
 ```
 
-## Utilisation
+## Usage
 
-Le programme accepte deux options principales :
+The program accepts two main options:
 
-- `--game-mode`, ou `-g`, pour choisir l'experience.
-- `--solver`, ou `-s`, pour choisir le solveur `normal` ou `fast`.
+- `--game-mode`, or `-g`, to choose the experience.
+- `--solver`, or `-s`, to choose the `normal` or `fast` solver.
 
-### Mode solver
+### Solver mode
 
-Le solveur propose un mot. Vous jouez ce mot dans un Wordle externe, puis vous
-entrez le retour couleur dans le terminal.
+The solver suggests a word. You play that word in an external Wordle game, then
+enter the color feedback in the terminal.
 
 ```bash
 uv run python main.py --game-mode solver --solver normal
 ```
 
-Raccourci equivalent :
+Equivalent shortcut:
 
 ```bash
 uv run python main.py -g solver -s normal
 ```
 
-Codes de retour :
+Feedback codes:
 
-- `v` ou `c` : vert / correct.
-- `j` ou `p` : jaune / present.
-- `g` ou `a` : gris / absent.
+- `v` or `c`: green / correct.
+- `j` or `p`: yellow / present.
+- `g` or `a`: gray / absent.
 
-### Mode game
+### Game mode
 
-Vous jouez une partie locale de Wordle dans le terminal. Tapez `hint` pendant la
-partie pour recevoir des suggestions du solveur.
+Play a local Wordle game directly in the terminal. Type `hint` during the game
+to receive suggestions from the solver.
 
 ```bash
 uv run python main.py --game-mode game
 ```
 
-### Mode game_solver
+### Game solver mode
 
-Le programme genere une solution aleatoire, puis l'IA joue toute seule jusqu'a
-resoudre la grille.
+The program generates a random solution, then the AI plays by itself until it
+solves the board.
 
 ```bash
 uv run python main.py --game-mode game_solver
 ```
 
-## Solveur rapide optionnel
+## Optional Fast Solver
 
-Le solveur `fast` utilise une extension Cython/OpenMP pour accelerer le calcul
-des scores. Le solveur `normal` reste disponible sans cette extension.
+The `fast` solver uses a Cython/OpenMP extension to speed up score computation.
+The `normal` solver remains available without this extension.
 
-Sur Ubuntu/Debian, installez les dependances de compilation, puis reconstruisez
-le package :
+On Ubuntu/Debian, install the build dependencies, then rebuild the package:
 
 ```bash
 sudo apt install python3.12-dev build-essential
 uv sync --reinstall-package wordle
 ```
 
-Lancer le solveur rapide :
+Run the fast solver:
 
 ```bash
 uv run python main.py --game-mode solver --solver fast
 ```
 
-Limiter le nombre de threads OpenMP :
+Limit the number of OpenMP threads:
 
 ```bash
 OMP_NUM_THREADS=8 uv run python main.py --game-mode solver --solver fast
 ```
 
-## Comment l'algorithme fonctionne
+## How the Algorithm Works
 
-Le solveur commence avec le mot `crane`. Apres chaque retour couleur, il reduit
-la liste des solutions possibles, puis evalue tous les mots autorises pour
-trouver celui qui separe le mieux les solutions restantes.
+The solver starts with the word `crane`. After each color feedback, it narrows
+down the list of possible solutions, then evaluates every allowed guess to find
+the word that best separates the remaining solutions.
 
 ```mermaid
 flowchart TD
-    A[Premier essai: crane] --> B[Recevoir le retour couleur]
-    B --> C[Filtrer les solutions compatibles]
-    C --> D[Tester chaque mot candidat]
-    D --> E[Simuler le retour contre chaque solution restante]
-    E --> F[Regrouper les solutions par motif de couleur]
-    F --> G[Calculer le score du mot]
-    G --> H[Choisir le meilleur mot]
-    H --> I{Mot trouve?}
-    I -- Non --> B
-    I -- Oui --> J[Fin de la partie]
+    A[First guess: crane] --> B[Receive color feedback]
+    B --> C[Filter compatible solutions]
+    C --> D[Test each candidate guess]
+    D --> E[Simulate feedback against each remaining solution]
+    E --> F[Group solutions by feedback pattern]
+    F --> G[Compute the guess score]
+    G --> H[Choose the best guess]
+    H --> I{Word found?}
+    I -- No --> B
+    I -- Yes --> J[End of game]
 ```
 
-### Filtrage
+### Filtering
 
-Si le dernier essai etait `crane`, le solveur garde seulement les solutions qui
-produiraient exactement le meme retour couleur.
+If the last guess was `crane`, the solver keeps only the solutions that would
+produce exactly the same color feedback.
 
 ```mermaid
 flowchart LR
-    A[Solutions possibles] --> B{Simulation avec le dernier guess}
-    B -->|Meme motif couleur| C[Solution conservee]
-    B -->|Motif different| D[Solution eliminee]
+    A[Possible solutions] --> B{Simulation with the last guess}
+    B -->|Same color pattern| C[Keep solution]
+    B -->|Different pattern| D[Remove solution]
 ```
 
 ### Scoring
 
-Pour chaque mot jouable, le solveur simule ce mot contre toutes les solutions
-restantes. Les solutions sont ensuite separees en groupes selon le motif obtenu
-par Wordle.
+For each playable word, the solver simulates that word against all remaining
+solutions. The solutions are then split into groups based on the Wordle feedback
+pattern they would produce.
 
-Un bon mot est un mot qui :
+A good guess is a word that:
 
-- cree beaucoup de groupes differents;
-- garde des groupes aussi equilibres que possible;
-- est prefere s'il fait aussi partie des solutions possibles.
+- creates many different groups;
+- keeps those groups as balanced as possible;
+- is preferred if it is also one of the possible solutions.
 
-Dans le code, ce score est represente par :
+In the code, this score is represented as:
 
 ```text
 GuessScore(
-  num_groups = nombre de motifs differents,
-  std = ecart-type de la taille des groupes,
-  is_possible_solution = le mot peut etre la solution
+  num_groups = number of different feedback patterns,
+  std = standard deviation of group sizes,
+  is_possible_solution = whether the guess can be the solution
 )
 ```
 
-Le meilleur mot maximise `num_groups`, minimise `std`, puis favorise un mot qui
-peut vraiment etre la solution.
+The best word maximizes `num_groups`, minimizes `std`, then favors a word that
+can actually be the solution.
 
 ```mermaid
 flowchart TD
-    A[Mot candidat] --> B[Feedback contre solution 1]
-    A --> C[Feedback contre solution 2]
-    A --> D[Feedback contre solution 3]
+    A[Candidate guess] --> B[Feedback against solution 1]
+    A --> C[Feedback against solution 2]
+    A --> D[Feedback against solution 3]
     A --> E[...]
-    B --> F[Groupes par motif]
+    B --> F[Groups by pattern]
     C --> F
     D --> F
     E --> F
-    F --> G[Score: groupes nombreux et equilibres]
+    F --> G[Score: many balanced groups]
 ```
 
-Le solveur rapide applique la meme logique, mais encode les mots en entiers et
-delegue le calcul massif des groupes a Cython/OpenMP.
+The fast solver applies the same logic, but encodes words as integers and
+delegates the heavy group computation to Cython/OpenMP.
 
-## Vue d'ensemble des modes
+## Mode Overview
 
-| Mode | Commande | Ce que ca permet de faire |
+| Mode | Command | What it does |
 | --- | --- | --- |
-| `solver` | `uv run python main.py -g solver` | Utiliser l'IA comme assistant pour resoudre un Wordle externe. |
-| `game` | `uv run python main.py -g game` | Jouer a Wordle dans le terminal, avec une aide optionnelle via `hint`. |
-| `game_solver` | `uv run python main.py -g game_solver` | Regarder l'IA resoudre automatiquement une partie locale. |
+| `solver` | `uv run python main.py -g solver` | Uses the AI as an assistant for solving an external Wordle. |
+| `game` | `uv run python main.py -g game` | Lets you play Wordle in the terminal, with optional help through `hint`. |
+| `game_solver` | `uv run python main.py -g game_solver` | Lets you watch the AI solve a local game automatically. |
 
-## Structure rapide
+## Quick Structure
 
 ```text
-main.py                 # Point d'entree CLI
-core/Game.py            # Logique d'une partie Wordle
-core/Solver.py          # Solveur Python normal
-core/FastSolver.py      # Solveur accelere Cython/OpenMP
-core/Answer.py          # Evaluation des couleurs Wordle
-core/Interface*.py      # Interfaces terminal des trois modes
-solutions.txt           # Liste des solutions possibles
-wordle-guesses.txt      # Liste des guesses acceptes
+main.py                 # CLI entry point
+core/Game.py            # Wordle game logic
+core/Solver.py          # Normal Python solver
+core/FastSolver.py      # Accelerated Cython/OpenMP solver
+core/Answer.py          # Wordle color evaluation
+core/Interface*.py      # Terminal interfaces for the three modes
+solutions.txt           # Possible solution list
+wordle-guesses.txt      # Accepted guess list
 ```

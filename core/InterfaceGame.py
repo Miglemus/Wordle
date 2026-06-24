@@ -1,9 +1,11 @@
 import io
+from time import perf_counter
 from contextlib import redirect_stdout
 
 from core.Interface import Interface
 from core.Game import Game
 from core.Solver import Solver
+from core.timing import format_duration
 from core.ui_components import GuessRow, celebration_panel, game_layout, title_panel
 from core.utils import get_all_words
 from rich.console import Console
@@ -17,6 +19,7 @@ class InterfaceGame(Interface):
         self._rows: list[GuessRow] = []
         self._synced_hint_rows = 0
         self._last_hint = ""
+        self._last_hint_duration = 0.0
 
     def play(self):
         self._console.clear()
@@ -70,9 +73,11 @@ class InterfaceGame(Interface):
     def _hint_message(self) -> str:
         if not self._rows:
             if not self._last_hint:
-                with redirect_stdout(io.StringIO()):
-                    self._last_hint = self._solver.guess(None)
-            return "[italic cyan]Suggestion strategique : CRANE.[/italic cyan]"
+                self._last_hint = self._timed_guess(None)
+            return (
+                "[italic cyan]Suggestion strategique : CRANE.[/italic cyan]\n"
+                f"Temps de calcul : [bold cyan]{format_duration(self._last_hint_duration)}[/bold cyan]"
+            )
 
         self._sync_hint_solver()
         suggestions = []
@@ -91,15 +96,24 @@ class InterfaceGame(Interface):
         else:
             suggestion_text = f"{', '.join(suggestions[:-1])} ou {suggestions[-1]}"
 
-        return f"[italic cyan]Besoin d'un coup de main ? Essayez {suggestion_text}.[/italic cyan]"
+        return (
+            f"[italic cyan]Besoin d'un coup de main ? Essayez {suggestion_text}.[/italic cyan]\n"
+            f"Temps de calcul : [bold cyan]{format_duration(self._last_hint_duration)}[/bold cyan]"
+        )
 
     def _sync_hint_solver(self) -> None:
+        if not self._solver._history:
+            self._last_hint = self._timed_guess(None)
+        for row in self._rows[self._synced_hint_rows:]:
+            self._last_hint = self._timed_guess(row.answer)
+            self._synced_hint_rows += 1
+
+    def _timed_guess(self, answer):
+        start = perf_counter()
         with redirect_stdout(io.StringIO()):
-            if not self._solver._history:
-                self._last_hint = self._solver.guess(None)
-            for row in self._rows[self._synced_hint_rows:]:
-                self._last_hint = self._solver.guess(row.answer)
-                self._synced_hint_rows += 1
+            guess = self._solver.guess(answer)
+        self._last_hint_duration = perf_counter() - start
+        return guess
 
     def _solutions_left(self) -> int:
         return len(self._solver._possible_solutions)

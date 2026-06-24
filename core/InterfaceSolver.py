@@ -1,9 +1,11 @@
 import io
+from time import perf_counter
 from contextlib import redirect_stdout
 
 from core.Answer import Answer
 from core.Interface import Interface
 from core.Solver import Solver
+from core.timing import format_duration
 from core.ui_components import (
     GuessRow,
     celebration_panel,
@@ -22,6 +24,7 @@ class InterfaceSolver(Interface):
         self._solver = solver
         self._console = Console()
         self._rows: list[GuessRow] = []
+        self._last_guess_duration = 0.0
 
     def play(self):
         self._console.clear()
@@ -53,8 +56,11 @@ class InterfaceSolver(Interface):
             )
 
     def _guess(self, answer: Answer | None) -> str:
+        start = perf_counter()
         with redirect_stdout(io.StringIO()):
-            return self._solver.guess(answer)
+            guess = self._solver.guess(answer)
+        self._last_guess_duration = perf_counter() - start
+        return guess
 
     def _ask_answer(self, guess: str) -> Answer:
         while True:
@@ -62,7 +68,8 @@ class InterfaceSolver(Interface):
                 game_layout(
                     "Mode solver",
                     self._rows,
-                    f"Mot propose : [bold]{guess.upper()}[/bold]",
+                    f"Mot propose : [bold]{guess.upper()}[/bold]\n"
+                    f"Temps de calcul : [bold cyan]{format_duration(self._last_guess_duration)}[/bold cyan]",
                     solutions_left=self._solutions_left(),
                     possible_words=self._possible_words(),
                 )

@@ -1,11 +1,13 @@
 import io
 import time
+from time import perf_counter
 from contextlib import redirect_stdout
 
 from core.Interface import Interface
 from core.Game import Game
 from core.Solver import Solver
 from core.Answer import Answer
+from core.timing import format_duration
 from core.ui_components import GuessRow, celebration_panel, game_layout, title_panel
 from rich.console import Console
 from rich.live import Live
@@ -18,6 +20,7 @@ class InterfaceGameSolver(Interface):
         self._solver = solver
         self._console = Console()
         self._rows: list[GuessRow] = []
+        self._last_guess_duration = 0.0
 
     def play(self):
         self._console.clear()
@@ -41,7 +44,8 @@ class InterfaceGameSolver(Interface):
                     game_layout(
                         "Mode auto",
                         self._rows,
-                        f"L'IA tente [bold]{guess.upper()}[/bold].",
+                        f"L'IA tente [bold]{guess.upper()}[/bold].\n"
+                        f"Temps de calcul : [bold cyan]{format_duration(self._last_guess_duration)}[/bold cyan]",
                         solutions_left=self._solutions_left(),
                         possible_words=self._possible_words(),
                     )
@@ -100,8 +104,11 @@ class InterfaceGameSolver(Interface):
         )
 
     def _guess(self, answer: Answer | None) -> str:
+        start = perf_counter()
         with redirect_stdout(io.StringIO()):
-            return self._solver.guess(answer)
+            guess = self._solver.guess(answer)
+        self._last_guess_duration = perf_counter() - start
+        return guess
 
     def _solutions_left(self) -> int:
         return len(self._solver._possible_solutions)
