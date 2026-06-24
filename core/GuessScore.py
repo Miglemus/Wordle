@@ -1,6 +1,8 @@
+from functools import total_ordering
 import numpy as np
 
 
+@total_ordering
 class GuessScore:
 
     def __init__(self, guess: str, groups: list[int], possible_solutions: set[str]):
@@ -16,3 +18,6 @@ class GuessScore:
     
     def __eq__(self, other: "GuessScore"):
         return self._get_comparison_key() == other._get_comparison_key()
+
+    def __str__(self):
+        return f"GuessScore(num_groups={self._num_groups}, std={self._std:.2f}, is_possible_solution={self._is_possible_solution})"

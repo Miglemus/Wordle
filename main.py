@@ -16,7 +16,7 @@ if __name__ == "__main__":
     args = tyro.cli(CLI)
 
     if args.game_mode == "solver":
-        interface = InterfaceSolver(solver=Game())
+        interface = InterfaceSolver(solver=Solver())
     elif args.game_mode == "game_solver":
         game = Game()
         interface = InterfaceGameSolver(game=game, solver=Solver())
