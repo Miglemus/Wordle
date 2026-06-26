@@ -21,7 +21,7 @@ class InterfaceGame(Interface):
         self._last_hint = ""
         self._last_hint_duration = 0.0
 
-    def play(self):
+    def run(self):
         self._console.clear()
         self._console.print(title_panel("WORDLE", "Devinez le mot en 6 essais. Tapez hint pour recevoir une aide."))
         attempts = 6

@@ -6,5 +6,5 @@ class Interface:
         pass
 
     @abstractmethod
-    def play(self) -> None:
+    def run(self) -> None:
         pass

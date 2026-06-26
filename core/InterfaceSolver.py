@@ -26,7 +26,7 @@ class InterfaceSolver(Interface):
         self._rows: list[GuessRow] = []
         self._last_guess_duration = 0.0
 
-    def play(self):
+    def run(self):
         self._console.clear()
         self._console.print(title_panel("WORDLE SOLVER", "Pensez a un mot, puis guidez l'IA avec les couleurs."))
         guess = self._guess(None)

@@ -22,7 +22,7 @@ class InterfaceGameSolver(Interface):
         self._rows: list[GuessRow] = []
         self._last_guess_duration = 0.0
 
-    def play(self):
+    def run(self):
         self._console.clear()
         self._console.print(title_panel("AUTO SOLVER", "Observez l'IA resoudre la grille en temps reel."))
 

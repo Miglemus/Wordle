@@ -1,16 +1,18 @@
+from core.Scorers.GuessScorer import GuessScorer
+from core.Scorers.GroupScorer import GroupScorer
 from core.Answer import Answer
 from core.Solver import Solver
-from core.fast_solver import best_guess_fast, is_accelerated, openmp_threads_hint
+from core.fast_solver import calculate_guess_scores, is_accelerated
 
 
 class FastSolver(Solver):
-    def __init__(self):
+    def __init__(self, scorer: GuessScorer = GroupScorer):
         if not is_accelerated():
             raise RuntimeError(
                 "Cython/OpenMP acceleration is unavailable. Run `uv sync --reinstall-package wordle` "
                 "after installing python3.12-dev."
             )
-        super().__init__()
+        super().__init__(scorer=scorer)
 
     def guess(self, last_guess_answer: Answer) -> str:
         if len(self._history) == 0 and last_guess_answer is None:
@@ -23,19 +25,20 @@ class FastSolver(Solver):
                 last_guess_answer,
             )
 
-        print(f"Possible solutions left: {len(self._possible_solutions)}")
-
-        best_guess, score_key = best_guess_fast(
+        groups_by_guess = calculate_guess_scores(
             list(self.ALL_WORDS),
             self._possible_solutions,
         )
+
+        guess_scores = {}
+        for groups, guess in zip(groups_by_guess, self.ALL_WORDS):
+            guess_scores[guess] = self._guess_scorer(
+                guess,
+                groups,
+                self._possible_solutions,
+            )
+
+        best_guess = max(guess_scores, key=guess_scores.get)
         self._history.add(best_guess)
 
-        num_groups, neg_std, is_possible_solution = score_key
-        print(
-            f"best guess score for '{best_guess}': "
-            f"GuessScore(num_groups={num_groups}, std={-neg_std:.2f}, "
-            f"is_possible_solution={bool(is_possible_solution)})"
-        )
-        print(f"Cython/OpenMP acceleration: enabled ({openmp_threads_hint()})")
         return best_guess

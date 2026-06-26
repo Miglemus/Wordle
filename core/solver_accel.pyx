@@ -3,7 +3,6 @@
 import numpy as np
 cimport numpy as cnp
 from cython.parallel cimport prange
-from libc.math cimport sqrt
 from libc.stdint cimport int32_t, uint32_t, uint16_t
 
 <void>cnp.import_array()
@@ -40,19 +39,15 @@ cdef inline uint16_t evaluate_guess_c(uint32_t guess, uint32_t solution) noexcep
     return result
 
 
-cdef inline void score_one_guess_c(
+cdef inline int score_one_guess_c(
     uint32_t guess,
     cnp.uint32_t[::1] solutions,
-    int32_t* out_group_count,
-    double* out_std,
+    int32_t* out_groups,
 ) noexcept nogil:
     cdef Py_ssize_t j
     cdef int pattern
-    cdef int count
     cdef int group_count = 0
     cdef int num_solutions = solutions.shape[0]
-    cdef double mean
-    cdef double variance = 0.0
     cdef int counts[1024]
 
     for pattern in range(1024):
@@ -64,41 +59,39 @@ cdef inline void score_one_guess_c(
 
     for pattern in range(1024):
         if counts[pattern] > 0:
+            out_groups[group_count] = counts[pattern]
             group_count = group_count + 1
 
-    out_group_count[0] = group_count
-
-    if group_count == 0:
-        out_std[0] = 0.0
-        return
-
-    mean = <double>num_solutions / group_count
-
-    for pattern in range(1024):
-        count = counts[pattern]
-        if count > 0:
-            variance += (count - mean) * (count - mean)
-
-    out_std[0] = sqrt(variance / group_count)
+    return group_count
 
 
 cpdef score_guesses(cnp.uint32_t[::1] guesses, cnp.uint32_t[::1] solutions):
     cdef Py_ssize_t i
+    cdef Py_ssize_t j
     cdef int num_guesses = guesses.shape[0]
+    cdef int group_count
 
     cdef cnp.ndarray[cnp.int32_t, ndim=1] group_counts = np.zeros(
         num_guesses, dtype=np.int32
     )
-    cdef cnp.ndarray[cnp.float64_t, ndim=1] stds = np.zeros(
-        num_guesses, dtype=np.float64
+    cdef cnp.ndarray[cnp.int32_t, ndim=2] groups = np.zeros(
+        (num_guesses, 1024), dtype=np.int32
     )
+    cdef list result = []
+    cdef list guess_groups
 
     for i in prange(num_guesses, nogil=True, schedule="static"):
-        score_one_guess_c(
+        group_counts[i] = score_one_guess_c(
             guesses[i],
             solutions,
-            &group_counts[i],
-            &stds[i],
+            &groups[i, 0],
         )
 
-    return group_counts, stds
+    for i in range(num_guesses):
+        group_count = group_counts[i]
+        guess_groups = []
+        for j in range(group_count):
+            guess_groups.append(groups[i, j])
+        result.append(guess_groups)
+
+    return result

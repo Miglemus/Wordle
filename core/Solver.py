@@ -1,13 +1,16 @@
 from core.utils import get_all_solutions, get_all_words
 from core.Answer import Answer
-from core.GuessScore import GuessScore
+from core.Scorers.GuessScorer import GuessScorer
+from core.Scorers.GroupScorer import GroupScorer
 
 
 class Solver:
     ALL_WORDS = get_all_words()
+    ALL_SOLUTIONS = get_all_solutions()
 
-    def __init__(self):
-        self._possible_solutions = get_all_solutions()
+    def __init__(self, scorer: GuessScorer = GroupScorer):
+        self._guess_scorer = scorer
+        self._possible_solutions = set(self.ALL_SOLUTIONS)
         self._history = set()
 
     def guess(self, last_guess_answer: Answer) -> str:
@@ -16,8 +19,6 @@ class Solver:
             return "crane"
  
         self._possible_solutions = self.filter(self._possible_solutions, last_guess_answer)
- 
-        print(f"Possible solutions left: {len(self._possible_solutions)}")
  
         guess_groups: dict[str, dict[Answer, int]] = {} 
         for guess in self.ALL_WORDS:
@@ -28,12 +29,24 @@ class Solver:
 
         guess_scores = {}
         for guess in self.ALL_WORDS:
-            guess_scores[guess] = GuessScore(guess, list(guess_groups[guess].values()), self._possible_solutions)
+            groups = list(guess_groups[guess].values())
+            guess_scores[guess] = self._guess_scorer(
+                guess,
+                groups,
+                self._possible_solutions,
+            )
 
         best_guess = max(guess_scores, key=guess_scores.get)
         self._history.add(best_guess)
-        print(f"best guess score for '{best_guess}': {guess_scores[best_guess]}")
         return best_guess
+
+    def reset(self):
+        self._possible_solutions = set(self.ALL_SOLUTIONS)
+        self._history = set()
+
+    @property
+    def history(self):
+        return self._history
 
     @staticmethod
     def filter(solutions, answer: Answer):

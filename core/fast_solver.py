@@ -28,6 +28,20 @@ def encode_words(words: list[str]) -> np.ndarray:
     return np.array([encode_word(word) for word in words], dtype=np.uint32)
 
 
+def calculate_guess_scores(
+    guesses: list[str],
+    possible_solutions: set[str],
+) -> list[list[int]] | None:
+    if score_guesses is None:
+        return None
+
+    solution_words = list(possible_solutions)
+    encoded_guesses = encode_words(guesses)
+    encoded_solutions = encode_words(solution_words)
+
+    return score_guesses(encoded_guesses, encoded_solutions)
+
+
 def best_guess_fast(
     guesses: list[str],
     possible_solutions: set[str],
@@ -39,20 +53,22 @@ def best_guess_fast(
     encoded_guesses = encode_words(guesses)
     encoded_solutions = encode_words(solution_words)
 
-    group_counts, stds = score_guesses(encoded_guesses, encoded_solutions)
+    groups_by_guess = score_guesses(encoded_guesses, encoded_solutions)
 
     possible_lookup = possible_solutions
     best_word = guesses[0]
+    first_groups = groups_by_guess[0]
     best_key = (
-        int(group_counts[0]),
-        -float(stds[0]),
+        len(first_groups),
+        -float(np.std(first_groups)),
         int(best_word in possible_lookup),
     )
 
     for i, guess in enumerate(guesses[1:], start=1):
+        groups = groups_by_guess[i]
         key = (
-            int(group_counts[i]),
-            -float(stds[i]),
+            len(groups),
+            -float(np.std(groups)),
             int(guess in possible_lookup),
         )
         if key > best_key:
