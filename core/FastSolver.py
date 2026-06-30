@@ -15,10 +15,6 @@ class FastSolver(Solver):
         super().__init__(scorer=scorer)
 
     def guess(self, last_guess_answer: Answer) -> str:
-        if len(self._history) == 0 and last_guess_answer is None:
-            self._history.add("crane")
-            return "crane"
-
         if last_guess_answer is not None:
             self._possible_solutions = self.filter(
                 self._possible_solutions,

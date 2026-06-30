@@ -15,8 +15,8 @@ class Solver:
 
     def guess(self, last_guess_answer: Answer) -> str:
         if len(self._history) == 0 and last_guess_answer is None:
-            self._history.add("crane")
-            return "crane"
+            self._history.add("soare")
+            return "soare"
  
         self._possible_solutions = self.filter(self._possible_solutions, last_guess_answer)
  
